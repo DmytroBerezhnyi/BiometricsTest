@@ -3,20 +3,18 @@ package com.example.myapplication
 import android.annotation.SuppressLint
 import android.app.KeyguardManager
 import android.content.Context
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.widget.Button
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
-import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import java.util.concurrent.Executor
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -45,6 +43,36 @@ class MainActivity : AppCompatActivity() {
         isAvailableAuth()
     }
 
+    private fun isAvailableAuth() {
+        val biometricManager = BiometricManager.from(this)
+        when (biometricManager.canAuthenticate(BIOMETRIC_STRONG)) {
+
+            BiometricManager.BIOMETRIC_SUCCESS -> {
+                showLogText("App can authenticate using biometrics.")
+                startBiometricAuth()
+            }
+
+            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE ->
+                showLogText("No biometric features available on this device.")
+
+            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE ->
+                showLogText("Biometric features are currently unavailable.")
+
+            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
+                showLogText("BIOMETRIC_ERROR_NONE_ENROLLED")
+            }
+            BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED -> {
+                showLogText("BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED")
+            }
+            BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED -> {
+                showLogText("BIOMETRIC_ERROR_UNSUPPORTED")
+            }
+            BiometricManager.BIOMETRIC_STATUS_UNKNOWN -> {
+                showLogText("BIOMETRIC_STATUS_UNKNOWN")
+            }
+        }
+    }
+
     private fun startBiometricAuth() {
         executor = ContextCompat.getMainExecutor(this)
         biometricPrompt = BiometricPrompt(this, executor,
@@ -70,8 +98,8 @@ class MainActivity : AppCompatActivity() {
         promptInfo = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Biometric login for my app")
             .setSubtitle("Log in using your biometric credential")
-            //.setNegativeButtonText("NO") // Only Biometrics Auth
-            .setAllowedAuthenticators(BIOMETRIC_STRONG or DEVICE_CREDENTIAL) //Biometrics Auth or for example Pattern
+            .setNegativeButtonText("Cancel") // Only Biometrics Auth
+            .setConfirmationRequired(false)
             .build()
 
         findViewById<Button>(R.id.btnAuth).setOnClickListener {
@@ -79,41 +107,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun isAvailableAuth() {
-        val biometricManager = BiometricManager.from(this)
-        when (biometricManager.canAuthenticate(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)) {
+    /*private fun tryDeprecatedAPI() {
+        val fingerprintManager = FingerprintManagerCompat.from(this)
 
-            BiometricManager.BIOMETRIC_SUCCESS -> {
-                showLogText("App can authenticate using biometrics.")
-                startBiometricAuth()
-            }
+        if (fingerprintManager.isHardwareDetected) {
+            showLogText("Fingerprint scanner has been found")
 
-            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE ->
-                showLogText("No biometric features available on this device.")
-
-            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE ->
-                showLogText("Biometric features are currently unavailable.")
-
-            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
-                showLogText("BIOMETRIC_ERROR_NONE_ENROLLED")
-                // Prompts the user to create credentials that your app accepts.
-                val enrollIntent = Intent(Settings.ACTION_BIOMETRIC_ENROLL).apply {
-                    putExtra(
-                        Settings.EXTRA_BIOMETRIC_AUTHENTICATORS_ALLOWED,
-                        BIOMETRIC_STRONG or DEVICE_CREDENTIAL
-                    )
-                }
-                startActivityForResult(enrollIntent, 101)
+            if (fingerprintManager.hasEnrolledFingerprints()) {
+                showLogText("There is enrolled fingerprint... trying to auth")
+            } else {
+                showLogText("There is no enrolled fingerprint")
             }
-            BiometricManager.BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED -> {
-                showLogText("BIOMETRIC_ERROR_SECURITY_UPDATE_REQUIRED")
-            }
-            BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED -> {
-                showLogText("BIOMETRIC_ERROR_UNSUPPORTED")
-            }
-            BiometricManager.BIOMETRIC_STATUS_UNKNOWN -> {
-                showLogText("BIOMETRIC_STATUS_UNKNOWN")
-            }
+        } else {
+            showLogText("There is no fingerprint scanner")
         }
-    }
+    }*/
 }
